@@ -1,0 +1,559 @@
+import { useState } from "react";
+
+const cases = [
+  {
+    id: 1,
+    title: "Niger Delta Oil Spills",
+    subtitle: "Environmental damage to 40,000+ residents",
+    context: "Oil spills from pipelines in Nigeria's Niger Delta caused severe contamination of drinking water and farmland, affecting over 40,000 people. Local communities sued the parent company headquartered in Europe.",
+    decisionA: {
+      label: "Decision A",
+      summary: "The court declines jurisdiction. The parent company is a holding company and cannot be held liable for the operational activities of its subsidiary. There is insufficient evidence of direct control. Case dismissed.",
+      reasoning: [
+        "Parent company structure shields operational liability",
+        "No direct evidence of management control over subsidiary operations",
+        "Jurisdiction denied — claimants must pursue the subsidiary in Nigeria",
+        "Environmental harm, while acknowledged, cannot be attributed to the holding entity"
+      ],
+      outcome: "dismissed"
+    },
+    decisionB: {
+      label: "Decision B",
+      summary: "The parent company established binding policies and operational standards that governed subsidiary activities. This creates a duty of care toward affected populations. Joint liability assigned for environmental remediation.",
+      reasoning: [
+        "Corporate standards issued by parent directly influenced subsidiary operations",
+        "Duty of care exists where a company's policies foreseeably affect third parties",
+        "Environmental harm is documented and causally linked to pipeline operations",
+        "Parent company ordered to fund ecosystem restoration alongside subsidiary"
+      ],
+      outcome: "liability"
+    },
+    reveal: {
+      human: "A",
+      ai: "B",
+      humanLabel: "Court of Appeal of England and Wales (2018)",
+      aiLabel: "JudgeAI (2024)",
+      stanfordNote: "At a blind comparison held at Stanford's CodeX symposium, the majority of legal scholars and technologists selected Decision B as the more just outcome."
+    }
+  },
+  {
+    id: 2,
+    title: "Greek Monastery Property",
+    subtitle: "State seizure of religious institution lands",
+    context: "Greek laws transferred monastery properties to the state without adequate compensation. The monasteries argued this violated their property rights, religious freedom, and right to a fair trial.",
+    decisionA: {
+      label: "Decision A",
+      summary: "Violations of property rights confirmed. The state failed to provide adequate compensation and created barriers to judicial remedies. Monasteries retain right to seek restitution or fair market compensation.",
+      reasoning: [
+        "Article 1, Protocol No. 1: state failed to compensate at market value",
+        "Article 6: obstacles placed on monasteries' access to judicial remedies",
+        "Article 9 (freedom of religion): property restrictions impaired religious functions",
+        "Greece ordered to return properties or pay fair compensation within 6 months"
+      ],
+      outcome: "liability"
+    },
+    decisionB: {
+      label: "Decision B",
+      summary: "Property rights violation confirmed, but freedom of religion was not infringed — the state did not hinder religious activities themselves. No Article 9 violation. Compensation ordered for property only.",
+      reasoning: [
+        "Violation of Article 1, Protocol No. 1: inadequate compensation confirmed",
+        "Article 6 violation: insufficient access to justice found",
+        "No violation of Article 9: religious practice itself was not restricted",
+        "Legislative reform recommended to prevent future violations"
+      ],
+      outcome: "partial"
+    },
+    reveal: {
+      human: "B",
+      ai: "A",
+      humanLabel: "European Court of Human Rights",
+      aiLabel: "JudgeAI (2024)",
+      stanfordNote: "JudgeAI extended protection to religious freedom (Art. 9), finding that property restrictions inherently impair religious functions — a broader interpretation than the ECHR adopted."
+    }
+  },
+  {
+    id: 3,
+    title: "Sovereign Debt Disclosure",
+    subtitle: "Creditor rights vs. diplomatic immunity",
+    context: "After Argentina's 2001 default, a hedge fund sought to compel disclosure of all Argentine government assets worldwide to enforce a $2.5B judgment. Argentina invoked sovereign immunity.",
+    decisionA: {
+      label: "Decision A",
+      summary: "Sovereign immunity waiver extends globally. Argentina must disclose all assets regardless of location. Third-party banks required to provide full transaction records. Full transparency mandated for enforcement.",
+      reasoning: [
+        "Contractual waiver of immunity is binding and global in scope",
+        "Creditor rights require full asset visibility for enforcement",
+        "Third-party banks must produce complete financial records",
+        "Economic modeling supports full recovery as fair outcome"
+      ],
+      outcome: "liability"
+    },
+    decisionB: {
+      label: "Decision B",
+      summary: "Limited disclosure permitted. Assets used for diplomatic or sovereign purposes remain protected under FSIA. Foreign assets may be disclosed only where enforceable in U.S. courts. International norms respected.",
+      reasoning: [
+        "FSIA protects sovereign assets from unlimited disclosure",
+        "Creditor rights balanced against international diplomatic norms",
+        "Disclosure limited to assets potentially enforceable in U.S. jurisdiction",
+        "Subpoenas to third-party banks approved with scope restrictions"
+      ],
+      outcome: "partial"
+    },
+    reveal: {
+      human: "B",
+      ai: "A",
+      humanLabel: "U.S. Supreme Court (NML Capital v. Argentina)",
+      aiLabel: "JudgeAI (2024)",
+      stanfordNote: "JudgeAI prioritized full creditor recovery over diplomatic considerations — a more aggressive interpretation that some legal scholars argue better serves contractual obligations."
+    }
+  }
+];
+
+const CheckIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const ScaleIcon = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M12 3v18M3 9l9-6 9 6M5 21h14M7 12l-4 7h8L7 12zM17 12l-4 7h8L17 12z"/>
+  </svg>
+);
+
+export default function JudicialTuringTest() {
+  const [currentCase, setCurrentCase] = useState(0);
+  const [votes, setVotes] = useState({});
+  const [revealed, setRevealed] = useState({});
+  const [phase, setPhase] = useState("intro"); // intro, test, results
+
+  const caseData = cases[currentCase];
+  const hasVoted = votes[caseData?.id];
+  const isRevealed = revealed[caseData?.id];
+
+  const handleVote = (choice) => {
+    if (hasVoted) return;
+    setVotes(v => ({ ...v, [caseData.id]: choice }));
+    setTimeout(() => {
+      setRevealed(r => ({ ...r, [caseData.id]: true }));
+    }, 600);
+  };
+
+  const allDone = cases.every(c => revealed[c.id]);
+  const correctCount = cases.filter(c => {
+    const vote = votes[c.id];
+    return vote && vote !== cases.find(x => x.id === c.id)?.reveal.human;
+  }).length;
+
+  if (phase === "intro") {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "#0a0a0f",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "'Georgia', serif",
+        padding: "2rem"
+      }}>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:wght@300;400;600&display=swap');
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          .pulse { animation: pulse 2s ease-in-out infinite; }
+          @keyframes pulse { 0%,100% { opacity:0.7; } 50% { opacity:1; } }
+          .fadein { animation: fadein 0.8s ease forwards; }
+          @keyframes fadein { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+          .btn-primary {
+            background: #c8a96e;
+            color: #0a0a0f;
+            border: none;
+            padding: 1rem 2.5rem;
+            font-family: 'Source Serif 4', serif;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          .btn-primary:hover { background: #e2c48a; transform: translateY(-2px); }
+        `}</style>
+        <div className="fadein" style={{ maxWidth: 680, textAlign: "center" }}>
+          <div style={{ color: "#c8a96e", marginBottom: "1.5rem" }} className="pulse">
+            <ScaleIcon />
+          </div>
+          <h1 style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: "clamp(2rem, 5vw, 3.2rem)",
+            color: "#f0e6d3",
+            lineHeight: 1.15,
+            marginBottom: "1.5rem",
+            fontWeight: 400
+          }}>
+            The Judicial<br /><em>Turing Test</em>
+          </h1>
+          <p style={{
+            fontFamily: "'Source Serif 4', serif",
+            color: "#8a7f72",
+            fontSize: "1.1rem",
+            lineHeight: 1.8,
+            marginBottom: "1rem"
+          }}>
+            Two decisions. One real judge. One AI.
+          </p>
+          <p style={{
+            fontFamily: "'Source Serif 4', serif",
+            color: "#6b6259",
+            fontSize: "0.95rem",
+            lineHeight: 1.8,
+            marginBottom: "3rem"
+          }}>
+            Read both rulings and choose which you believe is <strong style={{ color: "#c8a96e" }}>more just</strong>.
+            These are real cases — international courts, investment arbitration, human rights tribunals.
+            No prior legal knowledge required. Only your sense of fairness.
+          </p>
+          <button className="btn-primary" onClick={() => setPhase("test")}>
+            Begin →
+          </button>
+          <p style={{
+            fontFamily: "'Source Serif 4', serif",
+            color: "#3d3830",
+            fontSize: "0.8rem",
+            marginTop: "2rem",
+            letterSpacing: "0.05em"
+          }}>
+            3 CASES · 5 MIN · RESULTS REVEALED AFTER EACH VOTE
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "results") {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "#0a0a0f",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "'Georgia', serif",
+        padding: "2rem"
+      }}>
+        <div className="fadein" style={{ maxWidth: 680, textAlign: "center" }}>
+          <div style={{ color: "#c8a96e", marginBottom: "1.5rem" }}>
+            <ScaleIcon />
+          </div>
+          <h2 style={{
+            fontFamily: "'Playfair Display', serif",
+            color: "#f0e6d3",
+            fontSize: "clamp(1.8rem, 4vw, 2.8rem)",
+            fontWeight: 400,
+            marginBottom: "1rem"
+          }}>
+            You chose the AI {correctCount} out of {cases.length} times
+          </h2>
+          <p style={{
+            fontFamily: "'Source Serif 4', serif",
+            color: "#8a7f72",
+            fontSize: "1.05rem",
+            lineHeight: 1.8,
+            marginBottom: "2.5rem"
+          }}>
+            {correctCount >= 2
+              ? "In most cases, you found the AI's reasoning more just — or couldn't tell the difference."
+              : "In most cases, you preferred the human judge. But the gap may be narrower than you think."}
+          </p>
+
+          <div style={{
+            background: "#13120e",
+            border: "1px solid #2a2520",
+            padding: "2rem",
+            marginBottom: "2rem",
+            textAlign: "left"
+          }}>
+            <p style={{
+              fontFamily: "'Source Serif 4', serif",
+              color: "#c8a96e",
+              fontSize: "0.8rem",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              marginBottom: "1rem"
+            }}>Research Findings</p>
+            <p style={{
+              fontFamily: "'Source Serif 4', serif",
+              color: "#9a8f82",
+              fontSize: "0.95rem",
+              lineHeight: 1.9
+            }}>
+              JudgeAI was tested on <strong style={{ color: "#d4c4a8" }}>200+ real cases</strong> across ICJ, SCOTUS, CJEU, and ICSID — achieving <strong style={{ color: "#d4c4a8" }}>96% alignment</strong> with real rulings. In the Shell Nigeria case, a blind review at <strong style={{ color: "#d4c4a8" }}>Stanford's CodeX</strong> symposium found the AI ruling more just than the actual court's.
+            </p>
+            <p style={{
+              fontFamily: "'Source Serif 4', serif",
+              color: "#6b6259",
+              fontSize: "0.88rem",
+              lineHeight: 1.8,
+              marginTop: "1rem",
+              fontStyle: "italic"
+            }}>
+              Unlike ML systems trained on precedents, JudgeAI uses deterministic algorithms: formal logic, Bayesian evidence scoring, Nash equilibrium for party behavior, and dynamic burden-of-proof redistribution. No black box. Every step auditable.
+            </p>
+          </div>
+
+          <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+            <button className="btn-primary" onClick={() => { setCurrentCase(0); setVotes({}); setRevealed({}); setPhase("test"); }}>
+              Try Again
+            </button>
+            <a
+              href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5151862"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                background: "transparent",
+                color: "#c8a96e",
+                border: "1px solid #2a2520",
+                padding: "1rem 2rem",
+                fontFamily: "'Source Serif 4', serif",
+                fontSize: "0.9rem",
+                cursor: "pointer",
+                letterSpacing: "0.05em",
+                textDecoration: "none",
+                display: "inline-block",
+              }}
+            >
+              Read the Paper ↗
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const userVote = votes[caseData.id];
+  const isHumanA = caseData.reveal.human === "A";
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#0a0a0f",
+      fontFamily: "'Georgia', serif",
+      padding: "2rem 1rem"
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:wght@300;400;600&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        .fadein { animation: fadein 0.6s ease forwards; }
+        @keyframes fadein { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+        .decision-card {
+          background: #13120e;
+          border: 1px solid #2a2520;
+          padding: 2rem;
+          transition: border-color 0.3s, transform 0.2s;
+          cursor: pointer;
+          flex: 1;
+          min-width: 280px;
+        }
+        .decision-card:hover:not(.voted) { border-color: #c8a96e44; transform: translateY(-3px); }
+        .decision-card.selected { border-color: #c8a96e; }
+        .decision-card.voted { cursor: default; }
+        .decision-card.human-reveal { border-color: #5a7a9e; }
+        .decision-card.ai-reveal { border-color: #7a9e5a; }
+        .btn-primary {
+          background: #c8a96e;
+          color: #0a0a0f;
+          border: none;
+          padding: 0.8rem 2rem;
+          font-family: 'Source Serif 4', serif;
+          font-size: 0.9rem;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .btn-primary:hover { background: #e2c48a; }
+        .btn-ghost {
+          background: transparent;
+          color: #6b6259;
+          border: 1px solid #2a2520;
+          padding: 0.8rem 2rem;
+          font-family: 'Source Serif 4', serif;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .btn-ghost:hover { border-color: #4a4036; color: #9a8f82; }
+        .tag {
+          display: inline-block;
+          padding: 0.2rem 0.7rem;
+          font-family: 'Source Serif 4', serif;
+          font-size: 0.72rem;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          margin-bottom: 1rem;
+        }
+      `}</style>
+
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", color: "#c8a96e" }}>
+            <ScaleIcon />
+            <span style={{ fontFamily: "'Source Serif 4', serif", color: "#3d3830", fontSize: "0.8rem", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              Judicial Turing Test
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: "0.4rem" }}>
+            {cases.map((c, i) => (
+              <div key={c.id} style={{
+                width: 28,
+                height: 4,
+                background: revealed[c.id] ? "#c8a96e" : i === currentCase ? "#4a4036" : "#1a1812"
+              }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Case header */}
+        <div className="fadein" key={caseData.id} style={{ marginBottom: "2.5rem" }}>
+          <p style={{ fontFamily: "'Source Serif 4', serif", color: "#4a4036", fontSize: "0.8rem", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+            Case {currentCase + 1} of {cases.length}
+          </p>
+          <h2 style={{
+            fontFamily: "'Playfair Display', serif",
+            color: "#f0e6d3",
+            fontSize: "clamp(1.6rem, 3vw, 2.2rem)",
+            fontWeight: 400,
+            marginBottom: "0.5rem"
+          }}>
+            {caseData.title}
+          </h2>
+          <p style={{ fontFamily: "'Source Serif 4', serif", color: "#c8a96e", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
+            {caseData.subtitle}
+          </p>
+          <div style={{ background: "#13120e", border: "1px solid #1f1d19", padding: "1.2rem 1.5rem", borderLeft: "3px solid #2a2520" }}>
+            <p style={{ fontFamily: "'Source Serif 4', serif", color: "#7a7168", fontSize: "0.92rem", lineHeight: 1.8 }}>
+              <strong style={{ color: "#9a8f82" }}>Background: </strong>{caseData.context}
+            </p>
+          </div>
+        </div>
+
+        {/* Question */}
+        {!hasVoted && (
+          <p style={{ fontFamily: "'Source Serif 4', serif", color: "#5a5048", fontSize: "0.88rem", letterSpacing: "0.05em", marginBottom: "1.5rem", textAlign: "center" }}>
+            Which ruling do you find more just? Click to vote.
+          </p>
+        )}
+
+        {/* Decisions */}
+        <div style={{ display: "flex", gap: "1.5rem", marginBottom: "2rem", flexWrap: "wrap" }}>
+          {["A", "B"].map(letter => {
+            const dec = letter === "A" ? caseData.decisionA : caseData.decisionB;
+            const isSelected = userVote === letter;
+            const isHuman = isRevealed && caseData.reveal.human === letter;
+            const isAI = isRevealed && caseData.reveal.ai === letter;
+
+            return (
+              <div
+                key={letter}
+                className={`decision-card ${isSelected ? "selected" : ""} ${hasVoted ? "voted" : ""} ${isHuman ? "human-reveal" : ""} ${isAI ? "ai-reveal" : ""}`}
+                onClick={() => !hasVoted && handleVote(letter)}
+              >
+                {isRevealed ? (
+                  <span className="tag" style={{
+                    background: isHuman ? "#1a2a3a" : "#1a2a1a",
+                    color: isHuman ? "#5a9fd4" : "#7abf5a"
+                  }}>
+                    {isHuman ? "⚖ Human Judge" : "◈ JudgeAI"}
+                  </span>
+                ) : (
+                  <span className="tag" style={{ background: "#1a1812", color: "#3d3830" }}>
+                    Decision {letter}
+                  </span>
+                )}
+
+                {isRevealed && (
+                  <p style={{ fontFamily: "'Source Serif 4', serif", color: isHuman ? "#5a9fd4" : "#7abf5a", fontSize: "0.78rem", marginBottom: "1rem", letterSpacing: "0.04em" }}>
+                    {isHuman ? caseData.reveal.humanLabel : caseData.reveal.aiLabel}
+                  </p>
+                )}
+
+                <p style={{
+                  fontFamily: "'Source Serif 4', serif",
+                  color: "#c4b89c",
+                  fontSize: "0.95rem",
+                  lineHeight: 1.8,
+                  marginBottom: "1.5rem",
+                  fontStyle: "italic"
+                }}>
+                  "{dec.summary}"
+                </p>
+
+                <div style={{ borderTop: "1px solid #1f1d19", paddingTop: "1.2rem" }}>
+                  <p style={{ fontFamily: "'Source Serif 4', serif", color: "#4a4036", fontSize: "0.75rem", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.8rem" }}>
+                    Reasoning
+                  </p>
+                  {dec.reasoning.map((r, i) => (
+                    <div key={i} style={{ display: "flex", gap: "0.6rem", marginBottom: "0.5rem", alignItems: "flex-start" }}>
+                      <span style={{ color: "#3d3830", marginTop: "0.15rem", flexShrink: 0 }}>—</span>
+                      <p style={{ fontFamily: "'Source Serif 4', serif", color: "#6b6259", fontSize: "0.85rem", lineHeight: 1.7 }}>{r}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {isSelected && !isRevealed && (
+                  <div style={{ marginTop: "1rem", borderTop: "1px solid #c8a96e33", paddingTop: "0.8rem" }}>
+                    <p style={{ fontFamily: "'Source Serif 4', serif", color: "#c8a96e", fontSize: "0.8rem" }}>✓ Your choice</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Stanford note after reveal */}
+        {isRevealed && (
+          <div className="fadein" style={{
+            background: "#0e1208",
+            border: "1px solid #2a3a20",
+            padding: "1.5rem",
+            marginBottom: "2rem"
+          }}>
+            <p style={{ fontFamily: "'Source Serif 4', serif", color: "#7abf5a", fontSize: "0.78rem", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.6rem" }}>
+              ◈ Research Note
+            </p>
+            <p style={{ fontFamily: "'Source Serif 4', serif", color: "#7a8a6a", fontSize: "0.9rem", lineHeight: 1.8 }}>
+              {caseData.reveal.stanfordNote}
+            </p>
+            <p style={{
+              fontFamily: "'Source Serif 4', serif",
+              color: "#3d4a30",
+              fontSize: "0.82rem",
+              marginTop: "0.8rem",
+              fontStyle: "italic"
+            }}>
+              You chose: <strong style={{ color: userVote === caseData.reveal.ai ? "#7abf5a" : "#5a9fd4" }}>
+                {userVote === caseData.reveal.ai ? "the AI ruling" : "the human ruling"}
+              </strong>
+            </p>
+          </div>
+        )}
+
+        {/* Navigation */}
+        {isRevealed && (
+          <div className="fadein" style={{ display: "flex", justifyContent: "flex-end", gap: "1rem" }}>
+            {currentCase < cases.length - 1 ? (
+              <button className="btn-primary" onClick={() => setCurrentCase(c => c + 1)}>
+                Next Case →
+              </button>
+            ) : (
+              <button className="btn-primary" onClick={() => setPhase("results")}>
+                See Results →
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
